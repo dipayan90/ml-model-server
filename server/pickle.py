@@ -1,12 +1,12 @@
 from flask_restplus import Namespace, Resource, reqparse
-from pypmml import Model
+import dill as pickle
 import os.path
 from server.utils import NotFoundError, ServerError, Config, RequestError
 from json import loads, JSONDecodeError
 
 API = Namespace(
-    'PMML',
-    description='Loads a PMML Model and scores it')
+    'Pickle',
+    description='Loads a Python Pickled Model and scores it')
 
 SCORE_REQUEST_PARSER = reqparse.RequestParser()
 SCORE_REQUEST_PARSER.add_argument('scorereq',
@@ -16,22 +16,23 @@ SCORE_REQUEST_PARSER.add_argument('scorereq',
 
 
 @API.route("/score")
-class ScorePMML(Resource):
+class ScorePickle(Resource):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = Config().app_config
-        if "pmml" in config:
-            pmml_config = config["pmml"]
-            if "path" in pmml_config:
-                pmml_file_path = pmml_config["path"]
-                if os.path.exists(pmml_file_path):
-                    try:
-                        self.model = Model.fromFile(pmml_file_path)
-                    except Exception as exp:
-                        raise ServerError(f"Config file was loaded however PMML config couldn't be parsed correctly with error: {exp}")
-                else:
-                    raise NotFoundError(f"file: {pmml_file_path} could not be loaded, as it doesn't exist")
+        if "pickle" in config:
+            pickle_config = config["pickle"]
+            if "path" in pickle_config:
+                pickled_file_path = pickle_config["path"]
+                if os.path.exists(pickled_file_path):
+                    with open(pickled_file_path, 'r') as p_file:
+                        try:
+                            self.model = pickle.load(p_file)
+                        except Exception as exp:
+                            raise ServerError(
+                                f"Config file was loaded however pickled file could not be loaded correctly. Error {exp}")
+                    raise NotFoundError(f"file: {pickled_file_path} could not be loaded, as it doesn't exist")
 
     @API.expect(SCORE_REQUEST_PARSER)
     def post(self):

@@ -1,10 +1,13 @@
 import datetime
 import time
 import uuid
+import subprocess
+import sys
 
 from flask import Flask, g, request
 from flask_restplus import Api
 from server.pmml import API as PMMLNamespace
+from server.pickle import API as PickleNamespace
 from server.utils import AppLogger, NotFoundError, ServerError, RequestError, Config
 from flask_cors import CORS
 
@@ -12,16 +15,19 @@ from flask_cors import CORS
 class Server:
 
     def __init__(self,
-                 base_path: str="/",
-                 loglevel: str="debug",
-                 port: str="8080",
-                 debug: bool=True,
-                 cors_origins: list=None,
-                 config_file_location: str=None):
+                 base_path: str = "/",
+                 loglevel: str = "debug",
+                 port: str = "8080",
+                 debug: bool = True,
+                 cors_origins: list = None,
+                 config_file_location: str = None,
+                 custom_dependencies: list = None):
         if cors_origins is None:
             cors_origins = ["*"]
         if config_file_location is not None:
             Config(config_file_path=config_file_location)
+        if custom_dependencies is not None:
+            self.install_custom_dependencies(custom_dependencies)
         self.app = Flask(__name__)
         self.api = Api(self.app,
                        version='1.0',
@@ -30,6 +36,7 @@ class Server:
                        doc='/swagger'
                        )
         self.api.add_namespace(PMMLNamespace, path="{}pmml".format(base_path))
+        self.api.add_namespace(PickleNamespace, path="{}pickle".format(base_path))
         self.base = base_path
         self.port = port
         self.debug = debug
@@ -67,6 +74,10 @@ class Server:
         @self.api.errorhandler(ServerError)
         def handle_error(error):
             return error.response()
+
+    def install_custom_dependencies(self, dependencies):
+        for dep in dependencies:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", dep])
 
     def run(self):
         self.app.run(host="0.0.0.0", port=self.port, debug=self.debug)

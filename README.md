@@ -6,6 +6,7 @@ This project provides you a pre-built **REST** server to score your machine lear
 
 * Score models by just providing configurations. 
 * Error handling and standard logging inbuilt. 
+* Configurable **Base Path** of the API.
 * Comes bootstrapped with **CORS** support for cross domain access.
 * Documentation is inbuilt in the form of **SWAGGER** docs.
 * Supports following python model serialization formats:
