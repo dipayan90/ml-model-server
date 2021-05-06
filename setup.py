@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 core = [
     'flask-restplus==0.13.0',
-    'Flask-Cors==3.0.8'
+    'Flask-Cors==3.0.9'
 ]
 
 aws = [
